@@ -50,28 +50,28 @@ FORCE=
 
 updatePackage() {
     name=$1
-    
+
     REPO=https://github.com/c9/$name
     echo "${green}checking out ${resetColor}$REPO"
-    
+
     if ! [[ -d ./plugins/$name ]]; then
         mkdir -p ./plugins/$name
     fi
-    
+
     pushd ./plugins/$name
     if ! [[ -d .git ]]; then
         git init
         # git remote rm origin || true
         git remote add origin $REPO
     fi
-    
+
     version=`"$NODE" -e 'console.log((require("../../package.json").c9plugins["'$name'"].substr(1) || "origin/master"))'`;
     rev=`git rev-parse --revs-only $version`
-    
+
     if [ "$rev" == "" ]; then
         git fetch origin
     fi
-    
+
     status=`git status --porcelain --untracked-files=no`
     if [ "$status" == "" ]; then
         git reset $version --hard
@@ -85,19 +85,20 @@ updateAllPackages() {
     c9packages=(`"$NODE" -e 'console.log(Object.keys(require("./package.json").c9plugins).join(" "))'`)
     count=${#c9packages[@]}
     i=0
-    for m in ${c9packages[@]}; do echo $m; 
+    for m in ${c9packages[@]}; do echo $m;
         i=$(($i + 1))
         echo "updating plugin ${blue}$i${resetColor} of ${blue}$count${resetColor}"
         updatePackage $m
     done
 }
 
+# includes --unsafe-perm hack from https://github.com/c9/core/issues/197
 updateNodeModules() {
     echo "${magenta}--- Running npm install --------------------------------------------${resetColor}"
     safeInstall(){
         deps=(`"$NODE" -e 'console.log(Object.keys(require("./package.json").dependencies).join(" "))'`)
-        for m in $deps; do echo $m; 
-            "$NPM" install --loglevel warn $m || true
+        for m in $deps; do echo $m;
+            "$NPM" install --unsafe-perm --loglevel warn $m || true
         done
     }
     "$NPM" install || safeInstall
@@ -105,12 +106,12 @@ updateNodeModules() {
 }
 
 updateCore() {
-    if [ "$NO_PULL" ]; then 
+    if [ "$NO_PULL" ]; then
         return 0;
     fi
-    
+
     # without this git merge fails on windows
-    mv ./scripts/install-sdk.sh  ./scripts/.install-sdk-tmp.sh 
+    mv ./scripts/install-sdk.sh  ./scripts/.install-sdk-tmp.sh
     cp ./scripts/.install-sdk-tmp.sh ./scripts/install-sdk.sh
     git checkout -- ./scripts/install-sdk.sh
 
@@ -135,8 +136,9 @@ installGlobalDeps() {
         if [[ $os == "windows" ]]; then
             URL=https://raw.githubusercontent.com/cloud9ide/sdk-deps-win32
         else
-            URL=https://raw.githubusercontent.com/c9/install
-        fi    
+            # use hybridgroup fork
+            URL=https://raw.githubusercontent.com/hybridgroup/install
+        fi
         $DOWNLOAD $URL/master/install.sh | bash
     fi
 }
