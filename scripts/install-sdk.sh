@@ -139,7 +139,7 @@ installGlobalDeps() {
             # use hybridgroup fork
             URL=https://raw.githubusercontent.com/hybridgroup/install
         fi
-        $DOWNLOAD $URL/master/install.sh | bash
+        $DOWNLOAD $URL/lobot/install.sh | bash
     fi
 }
 
